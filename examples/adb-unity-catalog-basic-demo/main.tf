@@ -7,6 +7,13 @@ terraform {
       source = "databricks/databricks"
     }
   }
+  // run in remote backend terraform cloud
+  # backend "remote" {
+  #   organization = "RanWang"
+  #   workspaces {
+  #     name = "terraform-databricks-examples"
+  #   }
+  # }
 }
 
 data "azurerm_client_config" "current" {
@@ -110,7 +117,7 @@ resource "databricks_mws_permission_assignment" "workspace_user_groups" {
 // Create a container in storage account to be used by dev catalog as root storage
 resource "azurerm_storage_container" "dev_catalog" {
   name                  = "dev-catalog"
-  storage_account_name  = module.metastore_and_users.azurerm_storage_account_unity_catalog.name
+  storage_account_id    = module.metastore_and_users.azurerm_storage_account_unity_catalog.id
   container_access_type = "private"
 }
 
@@ -156,14 +163,14 @@ resource "databricks_grants" "dev_catalog" {
     principal  = "data_engineer"
     privileges = ["USE_CATALOG"]
   }
-  grant {
-    principal  = "data_scientist"
-    privileges = ["USE_CATALOG"]
-  }
-  grant {
-    principal  = "data_analyst"
-    privileges = ["USE_CATALOG"]
-  }
+  # grant {
+  #   principal  = "data_scientist"
+  #   privileges = ["USE_CATALOG"]
+  # }
+  # grant {
+  #   principal  = "data_analyst"
+  #   privileges = ["USE_CATALOG"]
+  # }
 }
 
 // Create schema for bronze datalake layer in dev env.
@@ -198,10 +205,10 @@ resource "databricks_grants" "silver" {
     principal  = "data_engineer"
     privileges = ["USE_SCHEMA", "CREATE_FUNCTION", "CREATE_TABLE", "EXECUTE", "MODIFY", "SELECT"]
   }
-  grant {
-    principal  = "data_scientist"
-    privileges = ["USE_SCHEMA", "SELECT"]
-  }
+  # grant {
+  #   principal  = "data_scientist"
+  #   privileges = ["USE_SCHEMA", "SELECT"]
+  # }
 }
 
 // Create schema for gold datalake layer in dev env.
@@ -219,14 +226,14 @@ resource "databricks_grants" "gold" {
     principal  = "data_engineer"
     privileges = ["USE_SCHEMA", "CREATE_FUNCTION", "CREATE_TABLE", "EXECUTE", "MODIFY", "SELECT"]
   }
-  grant {
-    principal  = "data_scientist"
-    privileges = ["USE_SCHEMA", "SELECT"]
-  }
-  grant {
-    principal  = "data_analyst"
-    privileges = ["USE_SCHEMA", "SELECT"]
-  }
+  # grant {
+  #   principal  = "data_scientist"
+  #   privileges = ["USE_SCHEMA", "SELECT"]
+  # }
+  # grant {
+  #   principal  = "data_analyst"
+  #   privileges = ["USE_SCHEMA", "SELECT"]
+  # }
 }
 
 

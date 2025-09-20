@@ -7,6 +7,13 @@ terraform {
       source = "databricks/databricks"
     }
   }
+  // run in remote backend terraform cloud
+  # backend "remote" {
+  #   organization = "RanWang"
+  #    workspaces { 
+  #     name = "terraform-databricks-examples" 
+  #   }
+  # }
 }
 
 provider "azurerm" {
@@ -58,7 +65,7 @@ resource "azurerm_storage_account" "unity_catalog" {
 // Create a container in storage account to be used by unity catalog metastore as root storage
 resource "azurerm_storage_container" "unity_catalog" {
   name                  = "${local.prefix}-container"
-  storage_account_name  = azurerm_storage_account.unity_catalog.name
+  storage_account_id    = azurerm_storage_account.unity_catalog.id
   container_access_type = "private"
 }
 
@@ -174,6 +181,9 @@ locals {
   }
 }
 
+output "all_spns" {
+  value = local.all_spns
+}
 // All governed by AzureAD, create or remove service to/from databricks account
 resource "databricks_service_principal" "sp" {
   provider       = databricks.azure_account
