@@ -16,16 +16,26 @@ terraform {
   # }
 }
 
+resource "azurerm_databricks_workspace" "adb_uc_ft" {
+  name                       = var.databricks_workspace_name
+  location                   = var.location
+  resource_group_name        = var.resource_group_name
+  sku                        = "premium"
+  # managed_resource_group_name = var.managed_resource_group_name != "" ? var.managed_resource_group_name : "${var.resource_group_name}-databricks"
+  managed_resource_group_name = var.managed_resource_group_name == "" ? "${var.databricks_workspace_name}-managed-rg" : var.managed_resource_group_name
+  tags = {
+    environment = var.environment
+  }
+}
+
 data "azurerm_client_config" "current" {
 }
 
 locals {
-  resource_regex            = "(?i)subscriptions/(.+)/resourceGroups/(.+)/providers/Microsoft.Databricks/workspaces/(.+)"
-  subscription_id           = regex(local.resource_regex, var.databricks_resource_id)[0]
-  resource_group            = regex(local.resource_regex, var.databricks_resource_id)[1]
-  databricks_workspace_name = regex(local.resource_regex, var.databricks_resource_id)[2]
+  resource_group            = var.resource_group_name
+  databricks_workspace_name = azurerm_databricks_workspace.adb_uc_ft.name
   tenant_id                 = data.azurerm_client_config.current.tenant_id
-  prefix                    = replace(replace(replace(lower(data.azurerm_resource_group.this.name), "rg", ""), "-", ""), "_", "")
+  prefix                    = replace(replace(replace(lower(var.resource_group_name), "rg", ""), "-", ""), "_", "")
 }
 
 data "azurerm_resource_group" "this" {
@@ -33,17 +43,14 @@ data "azurerm_resource_group" "this" {
 }
 
 provider "azurerm" {
-  subscription_id = local.subscription_id
+  subscription_id = var.subscription_id
   features {}
 }
 
-data "azurerm_databricks_workspace" "this" {
-  name                = local.databricks_workspace_name
-  resource_group_name = local.resource_group
-}
 
 locals {
-  databricks_workspace_host = data.azurerm_databricks_workspace.this.workspace_url
+  databricks_workspace_host = azurerm_databricks_workspace.adb_uc_ft.workspace_url
+  databricks_workspace_id   = azurerm_databricks_workspace.adb_uc_ft.workspace_id
 }
 
 // Provider for databricks workspace
@@ -62,12 +69,15 @@ provider "databricks" {
 // Module creating UC metastore and adding users, groups and service principals to azure databricks account
 module "metastore_and_users" {
   source                    = "./modules/metastore-and-users"
-  subscription_id           = local.subscription_id
+  subscription_id           = var.subscription_id
   databricks_workspace_name = local.databricks_workspace_name
   resource_group            = local.resource_group
   aad_groups                = var.aad_groups
   account_id                = var.account_id
   prefix                    = local.prefix
+  databricks_workspace_host = local.databricks_workspace_host
+  databricks_workspace_id   = local.databricks_workspace_id
+  metastore_name            = var.metastore_name
 }
 
 
@@ -149,7 +159,10 @@ resource "databricks_catalog" "dev" {
   name         = "dev_catalog"
   comment      = "this catalog is for dev env"
   owner        = "account_unity_admin"
-  storage_root = databricks_external_location.dev_location.url
+  storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
+     azurerm_storage_container.dev_catalog.name,
+  module.metastore_and_users.azurerm_storage_account_unity_catalog.name)
+  # storage_root = format("%s/", trimend(databricks_external_location.dev_location.url, "/"))
   properties = {
     purpose = "dev"
   }

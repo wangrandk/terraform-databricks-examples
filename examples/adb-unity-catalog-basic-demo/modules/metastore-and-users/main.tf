@@ -25,14 +25,11 @@ data "azurerm_resource_group" "this" {
   name = var.resource_group
 }
 
-data "azurerm_databricks_workspace" "this" {
-  name                = var.databricks_workspace_name
-  resource_group_name = var.resource_group
-}
+
 
 locals {
-  databricks_workspace_host = data.azurerm_databricks_workspace.this.workspace_url
-  databricks_workspace_id   = data.azurerm_databricks_workspace.this.workspace_id
+  databricks_workspace_host = var.databricks_workspace_host
+  databricks_workspace_id   = var.databricks_workspace_id
   prefix                    = var.prefix
 }
 
@@ -40,6 +37,7 @@ locals {
 provider "databricks" {
   host = local.databricks_workspace_host
 }
+
 
 // Create azure managed identity to be used by unity catalog metastore
 resource "azurerm_databricks_access_connector" "unity" {
@@ -77,8 +75,24 @@ resource "azurerm_role_assignment" "mi_data_contributor" {
 }
 
 // Create the first unity catalog metastore
+# resource "databricks_metastore" "this" {
+#   name = "primary"
+#   storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
+#     azurerm_storage_container.unity_catalog.name,
+#   azurerm_storage_account.unity_catalog.name)
+#   force_destroy = true
+#   owner         = "account_unity_admin"
+# }
+
+// Add a data source for the metastore:
+data "databricks_metastores" "existing" {
+  provider = databricks.azure_account
+}
+
+//Use a conditional to create the metastore only if none exists:
 resource "databricks_metastore" "this" {
-  name = "primary"
+  count        = length(data.databricks_metastores.existing.ids) == 0 ? 1 : 0
+  name         = "primary"
   storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
     azurerm_storage_container.unity_catalog.name,
   azurerm_storage_account.unity_catalog.name)
@@ -86,21 +100,27 @@ resource "databricks_metastore" "this" {
   owner         = "account_unity_admin"
 }
 
-// Assign managed identity to metastore
-resource "databricks_metastore_data_access" "first" {
-  metastore_id = databricks_metastore.this.id
-  name         = "the-metastore-key"
-  azure_managed_identity {
-    access_connector_id = azurerm_databricks_access_connector.unity.id
-  }
-  is_default = true
+//Select the metastore ID for downstream resources:
+locals {
+  bi_uc_test_ids = [for k, v in data.databricks_metastores.existing.ids : k if v == var.metastore_name]
+  metastore_id = length(local.bi_uc_test_ids) > 0 ? local.bi_uc_test_ids[0] : (length(databricks_metastore.this) > 0 ? databricks_metastore.this[0].id : "")
 }
 
-// Attach the databricks workspace to the metastore
-resource "databricks_metastore_assignment" "this" {
-  workspace_id = local.databricks_workspace_id
-  metastore_id = databricks_metastore.this.id
-}
+// Assign managed identity to metastore
+# resource "databricks_metastore_data_access" "first" {
+#   metastore_id = local.metastore_id
+#   name         = "the-metastore-key"
+#   azure_managed_identity {
+#     access_connector_id = azurerm_databricks_access_connector.unity.id
+#   }
+#   is_default = true
+# }
+
+# // Attach the databricks workspace to the metastore
+# resource "databricks_metastore_assignment" "this" {
+#   workspace_id = local.databricks_workspace_id
+#   metastore_id = local.metastore_id
+# }
 
 resource "databricks_default_namespace_setting" "this" {
   namespace {

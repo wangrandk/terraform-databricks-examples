@@ -1,3 +1,12 @@
+variable "databricks_workspace_host" {
+  description = "Workspace URL for the Databricks workspace."
+  type        = string
+}
+
+variable "databricks_workspace_id" {
+  description = "Workspace ID for the Databricks workspace."
+  type        = string
+}
 variable "subscription_id" {
   description = "Azure subscription id"
 }
@@ -16,5 +25,9 @@ variable "account_id" {
 }
 variable "prefix" {
   description = "Prefix to be used with resouce names"
+}
+variable "metastore_name" {
+  description = "Name of unity catalog metastore"
+  type        = string
 }
 
