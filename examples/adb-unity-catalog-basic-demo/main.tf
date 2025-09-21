@@ -34,6 +34,8 @@ data "azurerm_client_config" "current" {
 locals {
   resource_group            = var.resource_group_name
   databricks_workspace_name = azurerm_databricks_workspace.adb_uc_ft.name
+  databricks_workspace_host = azurerm_databricks_workspace.adb_uc_ft.workspace_url
+  databricks_workspace_id   = azurerm_databricks_workspace.adb_uc_ft.workspace_id
   tenant_id                 = data.azurerm_client_config.current.tenant_id
   prefix                    = replace(replace(replace(lower(var.resource_group_name), "rg", ""), "-", ""), "_", "")
 }
@@ -45,12 +47,6 @@ data "azurerm_resource_group" "this" {
 provider "azurerm" {
   subscription_id = var.subscription_id
   features {}
-}
-
-
-locals {
-  databricks_workspace_host = azurerm_databricks_workspace.adb_uc_ft.workspace_url
-  databricks_workspace_id   = azurerm_databricks_workspace.adb_uc_ft.workspace_id
 }
 
 // Provider for databricks workspace

@@ -1,0 +1,78 @@
+digraph G {
+  rankdir = "RL";
+  node [shape = rect, fontname = "sans-serif"];
+  "data.azuread_group.this" [label="data.azuread_group.this"];
+  "data.azurerm_client_config.current" [label="data.azurerm_client_config.current"];
+  "data.azurerm_resource_group.this" [label="data.azurerm_resource_group.this"];
+  "azurerm_databricks_workspace.adb_uc_ft" [label="azurerm_databricks_workspace.adb_uc_ft"];
+  "azurerm_storage_container.dev_catalog" [label="azurerm_storage_container.dev_catalog"];
+  "databricks_catalog.dev" [label="databricks_catalog.dev"];
+  "databricks_external_location.dev_location" [label="databricks_external_location.dev_location"];
+  "databricks_grants.bronze" [label="databricks_grants.bronze"];
+  "databricks_grants.dev_catalog" [label="databricks_grants.dev_catalog"];
+  "databricks_grants.gold" [label="databricks_grants.gold"];
+  "databricks_grants.silver" [label="databricks_grants.silver"];
+  "databricks_group_member.this" [label="databricks_group_member.this"];
+  "databricks_mws_permission_assignment.workspace_user_groups" [label="databricks_mws_permission_assignment.workspace_user_groups"];
+  "databricks_schema.bronze" [label="databricks_schema.bronze"];
+  "databricks_schema.gold" [label="databricks_schema.gold"];
+  "databricks_schema.silver" [label="databricks_schema.silver"];
+  "databricks_storage_credential.external_mi" [label="databricks_storage_credential.external_mi"];
+  subgraph "cluster_module.metastore_and_users" {
+    label = "module.metastore_and_users"
+    fontname = "sans-serif"
+    "module.metastore_and_users.data.azuread_group.this" [label="data.azuread_group.this"];
+    "module.metastore_and_users.data.azuread_service_principals.spns" [label="data.azuread_service_principals.spns"];
+    "module.metastore_and_users.data.azuread_users.account_admin_users" [label="data.azuread_users.account_admin_users"];
+    "module.metastore_and_users.data.azuread_users.users" [label="data.azuread_users.users"];
+    "module.metastore_and_users.data.azurerm_resource_group.this" [label="data.azurerm_resource_group.this"];
+    "module.metastore_and_users.data.databricks_metastores.existing" [label="data.databricks_metastores.existing"];
+    "module.metastore_and_users.azurerm_databricks_access_connector.unity" [label="azurerm_databricks_access_connector.unity"];
+    "module.metastore_and_users.azurerm_role_assignment.mi_data_contributor" [label="azurerm_role_assignment.mi_data_contributor"];
+    "module.metastore_and_users.azurerm_storage_account.unity_catalog" [label="azurerm_storage_account.unity_catalog"];
+    "module.metastore_and_users.azurerm_storage_container.unity_catalog" [label="azurerm_storage_container.unity_catalog"];
+    "module.metastore_and_users.databricks_default_namespace_setting.this" [label="databricks_default_namespace_setting.this"];
+    "module.metastore_and_users.databricks_group.this" [label="databricks_group.this"];
+    "module.metastore_and_users.databricks_metastore.this" [label="databricks_metastore.this"];
+    "module.metastore_and_users.databricks_service_principal.sp" [label="databricks_service_principal.sp"];
+    "module.metastore_and_users.databricks_user.this" [label="databricks_user.this"];
+    "module.metastore_and_users.databricks_user_role.account_admin" [label="databricks_user_role.account_admin"];
+  }
+  "azurerm_storage_container.dev_catalog" -> "module.metastore_and_users.azurerm_storage_account.unity_catalog";
+  "databricks_catalog.dev" -> "databricks_external_location.dev_location";
+  "databricks_external_location.dev_location" -> "azurerm_storage_container.dev_catalog";
+  "databricks_external_location.dev_location" -> "databricks_storage_credential.external_mi";
+  "databricks_grants.bronze" -> "databricks_schema.bronze";
+  "databricks_grants.dev_catalog" -> "databricks_catalog.dev";
+  "databricks_grants.gold" -> "databricks_schema.gold";
+  "databricks_grants.silver" -> "databricks_schema.silver";
+  "databricks_group_member.this" -> "data.azuread_group.this";
+  "databricks_group_member.this" -> "module.metastore_and_users.azurerm_role_assignment.mi_data_contributor";
+  "databricks_group_member.this" -> "module.metastore_and_users.databricks_default_namespace_setting.this";
+  "databricks_group_member.this" -> "module.metastore_and_users.databricks_metastore.this";
+  "databricks_group_member.this" -> "module.metastore_and_users.databricks_user_role.account_admin";
+  "databricks_mws_permission_assignment.workspace_user_groups" -> "databricks_group_member.this";
+  "databricks_schema.bronze" -> "databricks_catalog.dev";
+  "databricks_schema.gold" -> "databricks_catalog.dev";
+  "databricks_schema.silver" -> "databricks_catalog.dev";
+  "databricks_storage_credential.external_mi" -> "databricks_mws_permission_assignment.workspace_user_groups";
+  "module.metastore_and_users.data.azuread_service_principals.spns" -> "module.metastore_and_users.data.azuread_users.users";
+  "module.metastore_and_users.data.azuread_users.account_admin_users" -> "module.metastore_and_users.data.azuread_group.this";
+  "module.metastore_and_users.data.azuread_users.users" -> "module.metastore_and_users.data.azuread_group.this";
+  "module.metastore_and_users.azurerm_databricks_access_connector.unity" -> "module.metastore_and_users.data.azurerm_resource_group.this";
+  "module.metastore_and_users.azurerm_role_assignment.mi_data_contributor" -> "module.metastore_and_users.azurerm_databricks_access_connector.unity";
+  "module.metastore_and_users.azurerm_role_assignment.mi_data_contributor" -> "module.metastore_and_users.azurerm_storage_account.unity_catalog";
+  "module.metastore_and_users.azurerm_storage_account.unity_catalog" -> "module.metastore_and_users.data.azurerm_resource_group.this";
+  "module.metastore_and_users.azurerm_storage_container.unity_catalog" -> "module.metastore_and_users.azurerm_storage_account.unity_catalog";
+  "module.metastore_and_users.databricks_default_namespace_setting.this" -> "azurerm_databricks_workspace.adb_uc_ft";
+  "module.metastore_and_users.databricks_group.this" -> "module.metastore_and_users.data.azuread_group.this";
+  "module.metastore_and_users.databricks_metastore.this" -> "azurerm_databricks_workspace.adb_uc_ft";
+  "module.metastore_and_users.databricks_metastore.this" -> "module.metastore_and_users.data.databricks_metastores.existing";
+  "module.metastore_and_users.databricks_metastore.this" -> "module.metastore_and_users.azurerm_storage_container.unity_catalog";
+  "module.metastore_and_users.databricks_service_principal.sp" -> "module.metastore_and_users.data.azuread_service_principals.spns";
+  "module.metastore_and_users.databricks_user.this" -> "module.metastore_and_users.data.azuread_users.users";
+  "module.metastore_and_users.databricks_user_role.account_admin" -> "module.metastore_and_users.data.azuread_users.account_admin_users";
+  "module.metastore_and_users.databricks_user_role.account_admin" -> "module.metastore_and_users.databricks_group.this";
+  "module.metastore_and_users.databricks_user_role.account_admin" -> "module.metastore_and_users.databricks_service_principal.sp";
+  "module.metastore_and_users.databricks_user_role.account_admin" -> "module.metastore_and_users.databricks_user.this";
+}
